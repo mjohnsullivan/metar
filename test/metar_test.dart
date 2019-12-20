@@ -3,7 +3,6 @@ import 'package:xml/xml.dart' as xml;
 import 'package:metar/metar.dart';
 import 'package:test/test.dart';
 
-
 const responseXml = '''<?xml version="1.0" encoding="UTF-8"?>
 <response xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XML-Schema-instance" version="1.2" xsi:noNamespaceSchemaLocation="http://aviationweather.gov/adds/schema/metar1_2.xsd">
   <request_index>332857</request_index>
@@ -105,14 +104,34 @@ const metarXml = '''<METAR>
 
 void main() {
   group('METAR tests', () {
-
     setUp(() {});
 
     test('Parses METAR XML', () {
       final metarDoc = xml.parse(metarXml);
-      final metar = parseRawXml(metarDoc.firstChild);
-      expect(metar.raw == 'KPAO 191847Z 13004KT 10SM FEW020 14/10 A3024', isTrue);
+      final metar = parseRawMetarXml(metarDoc.firstChild);
+      expect(
+          metar.raw == 'KPAO 191847Z 13004KT 10SM FEW020 14/10 A3024', isTrue);
       expect(metar.stationId == 'KPAO', isTrue);
+      expect(metar.observationTime == DateTime.parse('2019-12-19T18:47:00Z'),
+          isTrue);
+      expect(metar.latitude == 37.47, isTrue);
+      expect(metar.longitude == -122.12, isTrue);
+      expect(metar.temperature == 14.0, isTrue);
+      expect(metar.dewpoint == 10.0, isTrue);
+      expect(metar.windDirection == 130, isTrue);
+      expect(metar.windSpeed == 4, isTrue);
+      expect(metar.visibility == 10.0, isTrue);
+      expect(metar.altimeter == 30.239174, isTrue);
+      expect(metar.skyCondition.cover == 'FEW', isTrue);
+      expect(metar.skyCondition.cloudBase == 2000, isTrue);
+      expect(metar.type == 'METAR', isTrue);
+      expect(metar.elevation == 2.0, isTrue);
     });
+  });
+
+  test('Metars can by constructed from XML elements', () {
+    final metarElement = xml.parse(metarXml).firstChild;
+    final metar = Metar.fromXml(metarElement);
+    expect(metar.stationId == 'KPAO', isTrue);
   });
 }
