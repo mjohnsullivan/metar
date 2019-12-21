@@ -12,7 +12,7 @@ Future<String> fetchMetarResponse(String airportCode) async {
   return res.body;
 }
 
-/// Parses a, aviation weather server response
+/// Parses an aviation weather server response
 /// <response xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XML-Schema-instance" version="1.2" xsi:noNamespaceSchemaLocation="http://aviationweather.gov/adds/schema/metar1_2.xsd">
 ///   <request_index>332857</request_index>
 ///   <data_source name="metars" />
