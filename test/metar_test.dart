@@ -108,7 +108,7 @@ void main() {
 
     test('Parses METAR XML', () {
       final metarDoc = xml.parse(metarXml);
-      final metar = parseRawMetarXml(metarDoc.firstChild);
+      final metar = parseMetarXml(metarDoc.firstChild);
       expect(
           metar.raw == 'KPAO 191847Z 13004KT 10SM FEW020 14/10 A3024', isTrue);
       expect(metar.stationId == 'KPAO', isTrue);
@@ -127,11 +127,20 @@ void main() {
       expect(metar.type == 'METAR', isTrue);
       expect(metar.elevation == 2.0, isTrue);
     });
+
+    test('Metars can by constructed from XML elements', () {
+      final metarElement = xml.parse(metarXml).firstChild;
+      final metar = Metar.fromXml(metarElement);
+      expect(metar.stationId == 'KPAO', isTrue);
+    });
   });
 
-  test('Metars can by constructed from XML elements', () {
-    final metarElement = xml.parse(metarXml).firstChild;
-    final metar = Metar.fromXml(metarElement);
-    expect(metar.stationId == 'KPAO', isTrue);
+  group('Server response tests', () {
+    setUp(() {});
+
+    test('Parses server response XML envelope', () {
+      final metars = parseMetarResponse(responseXml);
+      expect(metars.length == 4, isTrue);
+    });
   });
 }

@@ -1,10 +1,46 @@
 import 'package:xml/xml.dart' as xml;
+import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 
 const URL =
     'https://www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&stationString=KPAO&hoursBeforeNow=4';
 
-/// Parses a raw METAR
+/// Fetch METAR XML data for a specified airport
+Future<String> fetchMetarResponse(String airportCode) async {
+  assert(airportCode.length == 3);
+  final res = await http.get(URL);
+  return res.body;
+}
+
+/// Parses a, aviation weather server response
+/// <response xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XML-Schema-instance" version="1.2" xsi:noNamespaceSchemaLocation="http://aviationweather.gov/adds/schema/metar1_2.xsd">
+///   <request_index>332857</request_index>
+///   <data_source name="metars" />
+///   <request type="retrieve" />
+///   <errors />
+///   <warnings />
+///   <time_taken_ms>4</time_taken_ms>
+///   <data num_results="4">
+///     <METAR>...</METAR>
+///   </data>
+/// </response>
+Iterable<Metar> parseMetarResponse(String res) {
+  final xmlDoc = xml.parse(res);
+  assert(xmlDoc.rootElement.name.toString() == 'response');
+  final type =
+      xmlDoc.rootElement.findElements('data_source').first.getAttribute('name');
+  final errors = xmlDoc.rootElement.findElements('errors').first.children;
+  if (errors.isNotEmpty) {
+    throw Exception('Error(s) fetching data');
+  }
+  return xmlDoc.rootElement
+      .findElements('data')
+      .first
+      .findElements('METAR')
+      .map((metarXml) => parseMetarXml(metarXml));
+}
+
+/// Parses a METAR in XML format
 ///
 /// <METAR>
 ///   <raw_text>KPAO 191847Z 13004KT 10SM FEW020 14/10 A3024</raw_text>
@@ -23,7 +59,7 @@ const URL =
 ///   <metar_type>METAR</metar_type>
 ///   <elevation_m>2.0</elevation_m>
 /// </METAR>
-Metar parseRawMetarXml(xml.XmlElement metarDoc) {
+Metar parseMetarXml(xml.XmlElement metarDoc) {
   assert(metarDoc.firstChild.nodeType == xml.XmlNodeType.TEXT &&
       metarDoc.name.toString() == 'METAR');
   final raw = metarDoc.findElements('raw_text').first.text;
@@ -95,7 +131,7 @@ class Metar {
   final int windDirection, windSpeed;
   final SkyCondition skyCondition;
 
-  factory Metar.fromXml(xml.XmlElement element) => parseRawMetarXml(element);
+  factory Metar.fromXml(xml.XmlElement element) => parseMetarXml(element);
   /*
   Metar.fromRaw();
   Metar.fromResponse(String response) {
@@ -120,6 +156,7 @@ SkyCondition parseRawSkyConditionXml(xml.XmlElement skyElem) {
   return SkyCondition(cover: cover, cloudBase: cloudBase);
 }
 
+/// Sky conditions data class
 class SkyCondition {
   SkyCondition({@required this.cover, @required this.cloudBase});
   final String cover;
